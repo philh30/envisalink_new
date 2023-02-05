@@ -138,18 +138,26 @@ class EnvisalinkAlarm(EnvisalinkDevice, AlarmControlPanelEntity):
         self._code = code
         self._panic_type = panic_type
         self._arm_night_mode = arm_night_mode
-        name = f"Partition {partition_number}"
-        self._attr_unique_id = f"{controller.unique_id}_{name}"
-
+        name = None
+        self._attr_unique_id = f"{controller.unique_id}_Partition {partition_number}"
         self._attr_has_entity_name = True
+
+        LOGGER.debug(f"Setting up alarm: {controller.unique_id}_Partition {partition_number}")
+        super().__init__(name, controller, STATE_UPDATE_TYPE_PARTITION, partition_number)
+
+        self._attr_device_info = {
+            'identifiers': {(DOMAIN, f"{controller.unique_id}_Partition {partition_number}")},
+            'name': f"{self._controller.controller.panel_type} Partition {partition_number}",
+            'manufacturer': 'eyezon',
+            'model': f'Envisalink {controller.controller.envisalink_version}: {controller.controller.panel_type} Partition',
+            'sw_version': controller.controller.firmware_version,
+            'hw_version': controller.controller.envisalink_version,
+            'configuration_url': f"http://{controller.controller.host}",
+            }
         if partition_info:
             # Override the name if there is info from the YAML configuration
             if CONF_PARTITIONNAME in partition_info:
-                name = f"{partition_info[CONF_PARTITIONNAME]}"
-                self._attr_has_entity_name = False
-
-        LOGGER.debug("Setting up alarm: %s", name)
-        super().__init__(name, controller, STATE_UPDATE_TYPE_PARTITION, partition_number)
+                self._attr_device_info['name'] = f"{partition_info[CONF_PARTITIONNAME]}"
 
     @property
     def code_format(self) -> CodeFormat | None:

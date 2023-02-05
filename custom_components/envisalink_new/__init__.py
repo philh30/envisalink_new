@@ -13,6 +13,12 @@ from homeassistant.const import (
     CONF_TIMEOUT,
 )
 
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+)
+
 from .const import (
     CONF_ALARM_NAME,
     CONF_CREATE_ZONE_BYPASS_SWITCHES,
@@ -93,6 +99,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: config_entries.ConfigEnt
 
     # Reload entry when its updated.
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    # Remove any devices that no longer have entities.
+    device_registry = dr.async_get(hass)
+    entity_registry = er.async_get(hass)
+    device_list = []
+    for entity_entry in er.async_entries_for_config_entry(
+                entity_registry, entry.entry_id
+            ):
+            device_list.append(entity_entry.device_id)
+    for device_entry in dr.async_entries_for_config_entry(
+            device_registry, entry.entry_id
+        ):
+            if not (device_entry.id in device_list):
+                device_registry.async_remove_device(device_entry.id)
 
     return True
 

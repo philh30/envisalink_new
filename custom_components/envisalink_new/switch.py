@@ -56,18 +56,25 @@ class EnvisalinkSwitch(EnvisalinkDevice, SwitchEntity):
     def __init__(self, hass, zone_number, zone_info, controller):
         """Initialize the switch."""
         self._zone_number = zone_number
-        name = f"Zone {self._zone_number} Bypass"
-        self._attr_unique_id = f"{controller.unique_id}_{name}"
-
+        name = "Bypass"
+        self._attr_unique_id = f"{controller.unique_id}_Zone {zone_number} Bypass"
         self._attr_has_entity_name = True
-        if zone_info:
-            # Override the name if there is info from the YAML configuration
-            if CONF_ZONENAME in zone_info:
-                name = f"{zone_info[CONF_ZONENAME]}_bypass"
-                self._attr_has_entity_name = False
 
-        LOGGER.debug("Setting up zone: %s", name)
+        LOGGER.debug(f"Setting up zone bypass switch: {zone_number}")
         super().__init__(name, controller, STATE_UPDATE_TYPE_ZONE_BYPASS, zone_number)
+        self._attr_device_info = {
+            'identifiers': {(DOMAIN, f"{controller.unique_id}_Zone {zone_number}")},
+            'name': f"{self._controller.controller.panel_type} Zone {zone_number}",
+            'manufacturer':'eyezon',
+            'model': f'Envisalink {self._controller.controller.envisalink_version}: {self._controller.controller.panel_type} Zone',
+            'sw_version': self._controller.controller.firmware_version,
+            'hw_version': self._controller.controller.envisalink_version,
+            'configuration_url': f"http://{self._controller.controller.host}",
+            }
+        if zone_info:
+            # Override the name and type if there is info from the YAML configuration
+            if CONF_ZONENAME in zone_info:
+                self._attr_device_info['name'] = zone_info[CONF_ZONENAME]
 
     @property
     def _info(self):
